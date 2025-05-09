@@ -1,0 +1,31 @@
+[project]
+name = 'text-to-cypher-benchmark'
+version = "0.1.0"
+description = "A project to compare different question-to-answer solutions using LLMs over a Neo4j graph database."
+
+
+dependencies = [
+    "langchain",
+    "llama-index",
+    "nltk",
+    "bleu",
+    "langchain-neo4j>=0.4.0",
+    "langgraph>=0.3.31",
+    "langchain-community>=0.3.21",
+    "llama-index-llms-vertex>=0.4.6",
+    "llama-index-vector-stores-neo4jvector>=0.3.0",
+    "llama-index-embeddings-vertex-endpoint>=0.2.0",
+    "llama-index-embeddings-vertex>=0.3.2",
+    "llama-index-tools-neo4j>=0.3.0",
+    "neo4j>=5.28.1",
+    "llama-index-llms-ollama>=0.5.4",
+    "llama-index-embeddings-ollama>=0.6.0",
+#    "rag_cmd",
+    "langchain-google-vertexai>=2.0.21",
+    "datasets>=3.5.1",
+    "docker>=7.1.0",
+]
+
+#
+#[tool.uv.sources]
+#rag_cmd = { path = "rag_cmd" }
