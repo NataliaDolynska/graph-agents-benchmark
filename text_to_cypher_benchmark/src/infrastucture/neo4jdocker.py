@@ -1,123 +1,77 @@
-from pathlib import Path
-import docker
-import time
-from neo4j import GraphDatabase
 import os
-from sys import platform
-from docker.types import Mount
+import time
+from typing import Optional
 
-from text_to_cypher_benchmark.src.configuration import ROOT_DIR
+from python_on_whales import DockerClient
 
-# These constants remain as before
-DUMP_PATH = "/absolute/path/to/fincen-50.dump"  # change this as needed
-DUMP_NAME = os.path.basename(DUMP_PATH)
-DB_NAME = os.path.splitext(DUMP_NAME)[0]
-PASSWORD = "neo4j_test_password"
+from neo4j import GraphDatabase
+
+from text_to_cypher_benchmark.src.settings import ROOT_DIR
 
 
-class Neo4jDocker(object):
-    _PASSWORD = "neo4j_test_password"
-    _USER = "neo4j"
-    _DEFAULT = "neo4j"
+class Neo4jComposeRunner:
+    def __init__(
+            self,
+            db_name: str,
+            user: str = "neo4j",
+            password: str = "neo4j_test_password",
+            compose_file: Optional[str] = "docker-compose.yaml",
+    ):
+        self._db_name = db_name
+        self._user = user
+        self._password = password
+        self._uri = "bolt://localhost:7687"
+        self._compose_file = compose_file
+        self._started = False
 
-    def __init__(self, database_name, dump_base=os.path.join(ROOT_DIR, "datasets", "data")):
-        self.dump_base = dump_base  # This is used for backup mount (read-only)
-        if platform == "darwin":
-            colima_socket = os.path.expanduser("~/.colima/default/docker.sock")
-            self._client = docker.DockerClient(base_url=f'unix://{colima_socket}')
-        else:
-            self._client = docker.from_env()
-        self._container = None
-        self._dump_base = dump_base
-        self._database_name = database_name
-
-    def get_username(self):
-        return self._USER
-
-    def get_password(self):
-        return self._PASSWORD
+        compose_file_path = os.path.join(ROOT_DIR, self._compose_file)
+        if not os.path.exists(compose_file_path):
+            raise FileNotFoundError("There is no compose file at {}".format(compose_file_path))
+        self._docker = DockerClient(compose_files=[])
 
     def start(self):
-        print("Starting neo4j..")
-        print(f"Backups path: {self._dump_base}")
-
-        self._container = self._client.containers.run(
-            image="neo4j:5.19",
-            name="neo4j-benchmark",
-            mem_limit="10g",
-            command=["bash", "-c", "sleep infinity"],
-            environment={
-                "NEO4J_AUTH": f"{self._USER}/{self._PASSWORD}",
-                # "NEO4J_dbms_default__database": self._database_name,
-                "NEO4J_dbms_allow__upgrade": "true"
-
-            },
-            ports={"7474/tcp": 7474,
-                   "7687/tcp": 7687},
-            # Use a host mount for backups (read-only) and a Docker volume for /data.
-            mounts=[
-                Mount(target="/backups", source=self._dump_base, type="bind", read_only=True),
-            ],
-            detach=True
-        )
-        print("Waiting for container to initialize...")
-        # Optionally, you may want to add more robust health-check logic here.
-        for _ in range(10):
-            print(f"Container status: {self._container.status}")
-            if self._container.status == "created":
-                print("Container is CREATED!")
-                wait = 10
-                Neo4jDocker._wait(wait)
-                return
-            else:
-                print("Waiting for container to become ready...")
-                time.sleep(1)
-        self.stop()
-
-    def load(self):
-        # The neo4j-admin command expects a directory for --from-path.
-        # In this case, we assume that your backup directory (self._dump_base) contains the dump file.
-        cmd = (
-            f"bin/neo4j-admin database load --verbose --from-path=/backups/  {self._database_name}"
-        )
-        exec_log = self._container.exec_run(cmd, user="neo4j", demux=True)
-        stdout, stderr = exec_log.output
-        print("Restore output:\n", (stdout or b"").decode(), (stderr or b"").decode())
-        exec_log = self._container.exec_run("bin/neo4j start", user="neo4j" , demux=True)
-        stdout, stderr = exec_log.output
-        print("Start output:\n", (stdout or b"").decode(), (stderr or b"").decode())
-
+        print(f"🟢 Starting Neo4j with database '{self._db_name}' using {self._compose_file}...")
+        os.environ["NEO4J_DB"] = self._db_name
+        self._docker.compose.up(detach=True)
+        self._wait_for_neo4j_ready()
 
     def stop(self):
-        print("Stopping container...")
-        try:
-            self._container.stop()
-            self._container.remove()
-            print("Container stopped and removed.")
-        except Exception as e:
-            print(f"Error stopping container: {e}")
-        finally:
-            # If the container is already removed, this may raise an exception.
+        print("🛑 Stopping Neo4j Compose setup...")
+        self._docker.compose.down()
+
+    def _wait_for_neo4j_ready(self, retries=30, delay=2):
+        print("⏳ Waiting for Neo4j to become ready via Bolt...")
+        for attempt in range(1, retries + 1):
             try:
-                self._container.remove()
-            except Exception:
-                pass
+                driver = GraphDatabase.driver(self._uri, auth=(self._user, self._password))
+                with driver.session(database=self._db_name) as session:
+                    session.run("RETURN 1")
+                print("✅ Neo4j is ready.")
+                self._started = True
+                return
+            except Exception as e:
+                print(f"🔁 Attempt {attempt}: {e}")
+                time.sleep(delay)
+            finally:
+                try:
+                    driver.close()
+                except Exception as e:
+                    print(f"❌ Neo4j connection closed. Error: {e}")
+                    pass
+        self.stop()
+        raise RuntimeError("❌ Neo4j did not become ready in time.")
 
-    def get_driver(self, dataset_name):
-        uri = "bolt://localhost:7687"
-
-        try:
-            driver = GraphDatabase.driver(uri, auth=(self.get_username(), self.get_password()))
-            with driver.session(database=dataset_name) as session:
-                result = session.run("MATCH (n) RETURN count(n) AS count")
-                count = result.single()["count"]
-                print(f"✅ Node count in {dataset_name}: {count}")
-            driver.close()
-        except Exception as e:
-            print(f"Error getting driver: {e}")
-
-    @staticmethod
-    def _wait(timeout):
-        for idx in range(timeout):
-            print(f"Waiting for {timeout - idx} sec...")
-            time.sleep(1)
+    def count_nodes(self) -> int | None:
+        print("🔍 Checking node count...")
+        if self._started:
+            driver = GraphDatabase.driver(self._uri, auth=(self._user, self._password))
+            try:
+                with driver.session(database=self._db_name) as session:
+                    count = session.run("MATCH (n) RETURN count(n) AS count").single()["count"]
+                    print(f"📊 Node count in '{self._db_name}': {count}")
+                    return count
+            finally:
+                driver.close()
+        else:
+            print("❌ Neo4j did not become ready in time.")
+            return None

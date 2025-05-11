@@ -32,7 +32,7 @@ class LlamaIndexSolution(Solution):
         db_name: Optional[str] = None,
     ):
         print(f"Initiating LlamaIndexSolution")
-        self.llm = llm, self.embed_model = embed_model = ModelsProvider.provide(
+        self.llm = llm, self.embed_model = ModelsProvider.provide(
             self.get_name(), model_name
         )
 

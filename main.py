@@ -31,12 +31,12 @@ NEO4J_URL = "bolt://0.0.0.0:7687"  # Use docker-compose service name
 
 
 def get_solution(
-    solution_name: str,
-    model: str,
-    db_user: str,
-    db_password: str,
-    db_url: str,
-    db_name: str,
+        solution_name: str,
+        model: str,
+        db_user: str,
+        db_password: str,
+        db_url: str,
+        db_name: str,
 ) -> Solution:
     if solution_name == "langchain":
         from text_to_cypher_benchmark.src.solutions.langchain import LangChainSolution
@@ -75,13 +75,13 @@ def calculate_accuracy(question, expected, actual):
 
 
 def benchmark_solutions(
-    solution_name: str,
-    qa_pairs: List[Tuple[str, str]],
-    model: str,
-    db_user: str,
-    db_password: str,
-    db_url: str,
-    db_name: str,
+        solution_name: str,
+        qa_pairs: List[Tuple[str, str]],
+        model: str,
+        db_user: str,
+        db_password: str,
+        db_url: str,
+        db_name: str,
 ):
     """
     Benchmarks a given solution.
@@ -195,12 +195,10 @@ def main():
         create_file_if_not_exists(file_name)
 
         with open(
-            f"results/{provider}/{args.solution}_benchmark_results.json", "w"
+                f"results/{provider}/{args.solution}_benchmark_results.json", "w"
         ) as f:
             json.dump(results, f, indent=4)
 
 
 if __name__ == "__main__":
-    a = "neo4j/text2cypher-2025v1"
-    populate_neo4j_from_huggingface(a)
-    # main()
+    main()

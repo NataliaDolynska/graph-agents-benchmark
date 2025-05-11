@@ -23,9 +23,10 @@ dependencies = [
 #    "rag_cmd",
     "langchain-google-vertexai>=2.0.21",
     "datasets>=3.5.1",
-    "docker>=7.1.0",
+    "python-on-whales>=0.76.1",
+    "pandas>=2.2.3",
 ]
 
-#
+
 #[tool.uv.sources]
 #rag_cmd = { path = "rag_cmd" }

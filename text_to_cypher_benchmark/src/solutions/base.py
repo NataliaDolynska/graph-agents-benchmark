@@ -5,6 +5,9 @@ from text_to_cypher_benchmark.src.models import Frameworks
 class Solution(ABC):
     """Abstract base class for text-to-Cypher solutions."""
 
+    def before(self) -> None:
+        pass
+
     @abstractmethod
     def get_name(self) -> Frameworks:
         pass
@@ -14,3 +17,5 @@ class Solution(ABC):
         """Predicts the Cypher query for a given question."""
         pass
 
+    def after(self) -> None:
+        pass
