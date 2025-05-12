@@ -6,7 +6,7 @@ from python_on_whales import DockerClient
 
 from neo4j import GraphDatabase
 
-from text_to_cypher_benchmark.src.settings import ROOT_DIR
+from graph_agents_benchmark.src.settings import ROOT_DIR
 
 
 class Neo4jComposeRunner:

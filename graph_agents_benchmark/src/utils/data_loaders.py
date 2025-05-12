@@ -1,7 +1,12 @@
-from typing import List, Union,  Optional
+from copy import deepcopy
+from typing import List, Union, Callable, Optional
+
+import datasets
 import pandas as pd
-from datasets import load_dataset, DatasetDict, Dataset
-from text_to_cypher_benchmark.src.models import Column
+from datasets import load_dataset, DatasetDict, Dataset, IterableDatasetDict, IterableDataset
+from numpy.ma.core import identity
+
+from graph_agents_benchmark.src.models import Column
 
 
 class HuggingFaceDataLoader:
@@ -10,6 +15,7 @@ class HuggingFaceDataLoader:
 
         self._columns: List[Column] = []
         for column in columns:
+            # Normalize dotted path into list
             if isinstance(column.path, str):
                 path = column.path.split(".") if "." in column.path else [column.path]
             else:
@@ -40,6 +46,8 @@ class HuggingFaceDataLoader:
     def _extract_columns(self, dataset: Union[DatasetDict, Dataset], columns: List[Column]) -> List[dict]:
         datasets_dict = dataset if isinstance(dataset, DatasetDict) else {"default": dataset}
 
+        # Assume all columns refer to the same split (e.g., "train", "test")
+        # Use first path segment (like "train") to pick split
         split_names = {col.path[0] for col in columns}
         if len(split_names) > 1:
             raise ValueError(f"Multiple dataset splits referenced: {split_names}. Use only one.")

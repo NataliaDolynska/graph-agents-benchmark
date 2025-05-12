@@ -41,6 +41,7 @@ class QAEnricher:
                 try:
                     query = QAEnricher._unescape_query(cypher_query)
 
+                    # Check for missing properties
                     missing_props = QAEnricher._query_has_missing_properties(session, query)
                     if missing_props:
                         print(
@@ -128,6 +129,11 @@ class QAEnricher:
                 str_list = ["'" + ls + "'" for ls in list(map(str, val))]
                 return "[" + ",".join(str_list) + "]"
             return "\n".join(self._stringify(v) for v in val)
+
+        # if not isinstance(val, (str, int, float)):
+        #     print(f"The type of the value: {type(val)}")
+        #     print(f"AAAAA: {val}")
+
         return str(val)
 
     @staticmethod
@@ -136,6 +142,7 @@ class QAEnricher:
         Check whether the query refers to property keys that don't exist in the DB.
         Only works for simple property references like m.foo or n.bar.
         """
+        # Find property keys in the query, like "m.votes"
         props = set(re.findall(r"\b\w+\.(\w+)", query))
         if not props:
             return []

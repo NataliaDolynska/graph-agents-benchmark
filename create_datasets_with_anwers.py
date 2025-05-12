@@ -2,10 +2,10 @@ import os
 
 import pandas as pd
 
-from text_to_cypher_benchmark.src.infrastucture.neo4jdocker import Neo4jComposeRunner
-from text_to_cypher_benchmark.src.models import Column
-from text_to_cypher_benchmark.src.utils.data_loaders import HuggingFaceDataLoader
-from text_to_cypher_benchmark.src.utils.qa_enricher import QAEnricher
+from graph_agents_benchmark.src.infrastucture.neo4jdocker import Neo4jComposeRunner
+from graph_agents_benchmark.src.models import Column
+from graph_agents_benchmark.src.utils.data_loaders import HuggingFaceDataLoader
+from graph_agents_benchmark.src.utils.qa_enricher import QAEnricher
 
 DUMPS = [
     "twitch-50",

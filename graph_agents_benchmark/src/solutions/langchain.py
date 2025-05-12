@@ -8,29 +8,50 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from langchain_core.output_parsers import StrOutputParser
-from text_to_cypher_benchmark.src.model_provider import ModelsProvider
+from graph_agents_benchmark.src.model_provider import ModelsProvider
 from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
-from text_to_cypher_benchmark.src.solutions.base import Solution
-from text_to_cypher_benchmark.src.models import Frameworks
-from text_to_cypher_benchmark.src.utils.neo4j_integration import Neo4jConnectionManager
+from graph_agents_benchmark.src.solutions.base import Solution
+from graph_agents_benchmark.src.models import Frameworks
+from graph_agents_benchmark.src.utils.neo4j_integration import Neo4jConnectionManager
 
 logger = logging.getLogger(__name__)
 
 
 class LangChainSolution(Solution):
-    """LangChain implementation for text-to-Cypher conversion."""
+    """
+    LangChain implementation for text-to-Cypher conversion.
+
+    Leverages LangChain's capabilities to connect to Neo4j, construct prompts, and execute queries.
+    """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        """
+        Initializes the LangChain solution with a configuration.
+
+        Args:
+            config (Optional[Dict[str, Any]]): A dictionary containing configuration parameters, such as Neo4j connection details and model settings.
+        """
         super().__init__()
         self.config = config or {}
         self.chain: Optional[Runnable] = None
         self.graph: Optional[Neo4jGraph] = None
 
     def get_name(self) -> Frameworks:
+        """
+        Returns the name of the solution.
+
+        Returns:
+            Frameworks: The name of the solution (LANGCHAIN).
+        """
         return Frameworks.LANGCHAIN
 
     def initialize(self, **kwargs) -> bool:
-        """Initialize LangChain with Neo4j connection."""
+        """
+        Initializes the LangChain solution by establishing a connection to Neo4j and creating the LLM chain.
+
+        Returns:
+            bool: True if initialization was successful, False otherwise.
+        """
         try:
             # Initialize Neo4j connection
             self.graph = Neo4jGraph(
@@ -39,8 +60,6 @@ class LangChainSolution(Solution):
                 password=self.config.get("neo4j_password", "password"),
             )
 
-            print("1111")
-
             model_name = self.config["model_name"]
 
             print(f"Model name: {model_name}")
@@ -48,7 +67,6 @@ class LangChainSolution(Solution):
                 framework=self.get_name(),
                 llm_model=model_name,
             )
-            print("22222")
             self.llm = llm
             self.embed_model = embed_model
             # Initialize LLM
@@ -62,8 +80,6 @@ class LangChainSolution(Solution):
             #         HumanMessage(content="Convert this question to Cypher: {question}"),
             #     ]
             # )
-            print("333333")
-
             # Create chain
             self.chain = GraphCypherQAChain.from_llm(
                 self.llm,
@@ -78,7 +94,19 @@ class LangChainSolution(Solution):
             return False
 
     def predict(self, question: str) -> str:
-        """Convert natural language question to Cypher query."""
+        """
+        Converts a natural language question to a Cypher query using LangChain.
+
+        Args:
+            question (str): The input question in natural language.
+
+        Returns:
+            str: The generated Cypher query.
+
+        Raises:
+            ValueError: If LangChain is not initialized.
+            Exception: If Cypher query generation fails.
+        """
         if not self.chain:
             raise ValueError("LangChain not initialized. Call initialize() first.")
 
@@ -89,6 +117,8 @@ class LangChainSolution(Solution):
             raise
 
     def close(self):
-        """Clean up resources."""
+        """
+        Closes the connection to Neo4j.
+        """
         if self.graph:
             self.graph.close()

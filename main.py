@@ -1,7 +1,7 @@
 import sys
 
-from text_to_cypher_benchmark.src.solutions.base import Solution
-from text_to_cypher_benchmark.src.utils.neo4j_data_population import (
+from graph_agents_benchmark.src.solutions.base import Solution
+from graph_agents_benchmark.src.utils.neo4j_data_population import (
     populate_neo4j_from_huggingface,
 )
 
@@ -16,9 +16,9 @@ from typing import List, Tuple
 
 from nltk.translate.bleu_score import sentence_bleu
 
-from text_to_cypher_benchmark.src.executor import Executor
-from text_to_cypher_benchmark.src.utils.benchmark_data_loader import BenchmarkDataLoader
-from text_to_cypher_benchmark.src.utils.neo4j_integration import Neo4jConnectionManager
+from graph_agents_benchmark.src.executor import Executor
+from graph_agents_benchmark.src.utils.benchmark_data_loader import BenchmarkDataLoader
+from graph_agents_benchmark.src.utils.neo4j_integration import Neo4jConnectionManager
 
 NEO4J_USER = "neo4j"
 # NEO4J_USER = "twitter"
@@ -38,8 +38,25 @@ def get_solution(
         db_url: str,
         db_name: str,
 ) -> Solution:
+    """
+    Retrieves a solution based on the provided name.
+
+    Args:
+        solution_name (str): The name of the solution to retrieve (e.g., "langchain", "llamaindex", "custom").
+        model (str): The LLM model to use for the solution.
+        db_user (str): The database user.
+        db_password (str): The database password.
+        db_url (str): The database URL.
+        db_name (str): The database name.
+
+    Returns:
+        Solution: An instance of the requested solution.
+
+    Raises:
+        ValueError: If an unknown solution name is provided.
+    """
     if solution_name == "langchain":
-        from text_to_cypher_benchmark.src.solutions.langchain import LangChainSolution
+        from graph_agents_benchmark.src.solutions.langchain import LangChainSolution
 
         lch = LangChainSolution(
             config={
@@ -57,12 +74,12 @@ def get_solution(
         lch.initialize()
         return lch
     elif solution_name == "llamaindex":
-        from text_to_cypher_benchmark.src.solutions.llamaindex import LlamaIndexSolution
+        from graph_agents_benchmark.src.solutions.llamaindex import LlamaIndexSolution
 
         return LlamaIndexSolution()
 
     elif solution_name == "custom":
-        from text_to_cypher_benchmark.src.solutions.text2neo import Text2NeoSolution
+        from graph_agents_benchmark.src.solutions.text2neo import Text2NeoSolution
 
         return Text2NeoSolution(model_name="test")
     else:
@@ -70,7 +87,17 @@ def get_solution(
 
 
 def calculate_accuracy(question, expected, actual):
-    """Stub accuracy function."""
+    """
+    Stub accuracy function.
+
+    Args:
+        question (str): The question asked.
+        expected (str): The expected answer.
+        actual (str): The actual answer.
+
+    Returns:
+        float: A stubbed accuracy score (always 0.5).
+    """
     return 0.5
 
 
@@ -87,8 +114,16 @@ def benchmark_solutions(
     Benchmarks a given solution.
 
     Args:
-        solution_name: Name of the solution being benchmarked.
-        qa_pairs: List of question/answer tuples
+        solution_name (str): Name of the solution being benchmarked.
+        qa_pairs (List[Tuple[str, str]]): List of question/answer tuples.
+        model (str): The LLM model to use for the solution.
+        db_user (str): The database user.
+        db_password (str): The database password.
+        db_url (str): The database URL.
+        db_name (str): The database name.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries containing the benchmark results.
     """
     print(f"Benchmarking solution: {solution_name}")
 
@@ -123,6 +158,12 @@ def benchmark_solutions(
 
 
 def create_file_if_not_exists(file_path):
+    """
+    Creates a file if it does not already exist.
+
+    Args:
+        file_path (str): The path to the file to create.
+    """
     file = Path(file_path)
     if not file.exists():
         file.touch()
@@ -132,6 +173,12 @@ def create_file_if_not_exists(file_path):
 
 
 def create_dir_if_not_exists(directory_path):
+    """
+    Creates a directory if it does not already exist.
+
+    Args:
+        directory_path (str): The path to the directory to create.
+    """
     file = Path(directory_path)
     if not file.is_dir():
         file.mkdir(parents=True)
@@ -141,6 +188,12 @@ def create_dir_if_not_exists(directory_path):
 
 
 def main():
+    """
+    Main function to benchmark different text-to-Cypher solutions.
+
+    Parses command-line arguments to determine the solution and model to use,
+    then benchmarks the specified solution and prints the results.
+    """
     # Load data using BenchmarkDataLoader, using the first and last columns for Q&A
     # qa_loader = BenchmarkDataLoader(
     #     "datasets/synthetic_opus_demodbs/questions_and_answers.csv"
@@ -201,4 +254,7 @@ def main():
 
 
 if __name__ == "__main__":
+    """
+    Entry point for the benchmark script.
+    """
     main()

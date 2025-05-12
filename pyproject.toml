@@ -1,7 +1,7 @@
 [project]
-name = 'text-to-cypher-benchmark'
+name = 'graph-agents-benchmark'
 version = "0.1.0"
-description = "A project to compare different question-to-answer solutions using LLMs over a Neo4j graph database."
+description = "A project to compare different question-to-answer solutions using LLMs agents over a Neo4j graph database."
 
 
 dependencies = [

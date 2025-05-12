@@ -4,7 +4,7 @@ from typing import Tuple
 from google.auth.credentials import Credentials
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 
-from text_to_cypher_benchmark.src.models import Frameworks
+from graph_agents_benchmark.src.models import Frameworks
 
 
 class ModelsProvider:
@@ -73,8 +73,6 @@ class ModelsProvider:
             from langchain_google_vertexai import VertexAIEmbeddings
             import vertexai
 
-            from google.oauth2 import service_account
-
             service_account = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE")
             if service_account:
                 credentials = ServiceAccountCredentials.from_service_account_file(service_account)
@@ -90,9 +88,7 @@ class ModelsProvider:
                 credentials=credentials,
             )
             llm = VertexAI(model_name=model)
-            print(f"RETURN |||||")
             embed_model = VertexAIEmbeddings("text-embedding-005")
-            print(f"RETURN LLM AND EM ")
             return llm, embed_model
 
     @staticmethod
