@@ -10,12 +10,19 @@ A benchmarking framework for evaluating AI agents' performance on graph database
 - Detailed performance metrics (accuracy, latency, error rate)
 - Easy integration with Neo4j
 
+## Requirements
+
+1. [UV](https://docs.astral.sh/uv/) - project dependency management command line tool.
+2. [Docker/Docker compose](https://docs.docker.com/compose/) - containers management tool
+3. UNIX based system for executing bash scripts 
+4. Access to one of defined LLM models (OLLAMA ... TBD)
+
 ## Quick Start
 
 1. Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 2. Configure database connection in `.env`:
